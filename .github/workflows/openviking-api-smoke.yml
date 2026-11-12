@@ -1,0 +1,52 @@
+name: OpenViking API credentials smoke
+
+on:
+  push:
+    branches: [codex/openviking-benchmark]
+    paths: [.github/workflows/openviking-api-smoke.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  api-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      OPENAI_API_KEY: ${{ secrets.TEXT_EMBEDDING_3_SMALL_OPENAI_KEY }}
+    steps:
+      - name: Test embedding and language model access
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import urllib.error
+          import urllib.request
+
+          key = os.environ.get('OPENAI_API_KEY', '')
+          if not key:
+              raise SystemExit('The configured repository secret is unavailable.')
+
+          checks = [
+              ('embeddings', {'model': 'text-embedding-3-small', 'input': 'A short test.'}),
+              ('chat/completions', {'model': 'gpt-4.1-mini', 'messages': [{'role': 'user', 'content': 'Reply OK.'}], 'max_tokens': 4}),
+          ]
+          for endpoint, payload in checks:
+              request = urllib.request.Request(
+                  'https://api.openai.com/v1/' + endpoint,
+                  data=json.dumps(payload).encode(),
+                  headers={'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json'},
+                  method='POST',
+              )
+              try:
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      result = json.load(response)
+              except urllib.error.HTTPError as exc:
+                  raise SystemExit(f'{endpoint}: HTTP {exc.code}') from None
+              if endpoint == 'embeddings' and not result.get('data'):
+                  raise SystemExit('Embedding response contained no vectors.')
+              if endpoint == 'chat/completions' and not result.get('choices'):
+                  raise SystemExit('Language-model response contained no choices.')
+              print(f'{endpoint}: OK')
+          PY
