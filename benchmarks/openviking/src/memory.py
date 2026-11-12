@@ -28,6 +28,7 @@ import uuid
 from typing import ClassVar
 
 import httpx
+from loguru import logger
 
 from amb.base import Memory
 from amb.contracts.conversation import Session
@@ -136,6 +137,10 @@ class OpenVikingMemory(Memory):
             task = self._request("GET", f"/api/v1/tasks/{task_id}")
             assert isinstance(task, dict)
             if task.get("status") == "completed":
+                logger.info(
+                    "OpenViking extraction counts: {}",
+                    (task.get("result") or {}).get("memories_extracted"),
+                )
                 queues = self._request("POST", "/api/v1/system/wait", json={})
                 assert isinstance(queues, dict)
                 if any(
@@ -159,6 +164,9 @@ class OpenVikingMemory(Memory):
             json={"query": query, "target_uri": "viking://~/memories", "limit": k},
         )
         assert isinstance(result, dict)
+        logger.info(
+            "OpenViking memory search returned {} hits", len(result.get("memories", []))
+        )
         hits = []
         for item in result.get("memories", []):
             uri = item["uri"]
