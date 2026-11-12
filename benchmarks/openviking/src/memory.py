@@ -30,6 +30,8 @@ class OpenVikingMemory(Memory):
         super().__init__(**params)
         self.model_name(model, "llm")
         self.model_name(embedding_model, "embedding")
+        if model != "openai:gpt-6-luna" or embedding_model != "openai:text-embedding-3-small":
+            raise ValueError("The OpenViking smoke server is configured for GPT-6 Luna and text-embedding-3-small")
         self.model = model
         self.embedding_model = embedding_model
         self.user_id = "amb-" + uuid.uuid4().hex
@@ -78,7 +80,10 @@ class OpenVikingMemory(Memory):
             task = self._request("GET", f"/api/v1/tasks/{task_id}")
             assert isinstance(task, dict)
             if task.get("status") == "completed":
-                self._request("POST", "/api/v1/system/wait", json={})
+                queues = self._request("POST", "/api/v1/system/wait", json={})
+                assert isinstance(queues, dict)
+                if any(queue.get("error_count") or queue.get("errors") for queue in queues.values()):
+                    raise RuntimeError("OpenViking background indexing reported errors")
                 return
             if task.get("status") in {"failed", "cancelled"}:
                 raise RuntimeError(f"OpenViking extraction {task['status']}: {task.get('error')}")

@@ -12,12 +12,14 @@ end-to-end path before expanding the benchmark.
 - [x] Fork the upstream benchmark into a public repository.
 - [x] Verify the fork's existing tests and an offline baseline locally: 395
   tests passed; a three-question LoCoMo smoke run completed without a judge.
-- [ ] Validate the OpenViking adapter's isolated sample state, chronological
-  ingestion, processing completion and search against a live server. Source
-  session attribution remains unavailable until the server supplies evidence.
+- [x] Validate the OpenViking adapter's session ingestion and retrieval against
+  a live isolated server on GitHub Actions (run 43240058396). Unique user
+  namespaces are covered by a local HTTP contract test; source-session
+  attribution remains unavailable until the server supplies evidence.
 - [x] Test the `Develop` environment's `TEXT_EMBEDDING_3_SMALL_OPENAI_KEY`
   with text-embedding-3-small and GPT-6 Luna on GitHub Actions.
-- [ ] Validate the OpenViking end-to-end GitHub Actions smoke workflow.
+- [x] Validate an OpenViking ingest-and-recall GitHub Actions smoke workflow.
+- [ ] Validate a scored OpenViking LoCoMo smoke run and save its output.
 - [ ] Run a small end-to-end benchmark and retain its results and configuration.
 - [ ] Run a matching comparison against an existing provider.
 - [ ] Record actual runner CPU, core count and memory; report elapsed time and
