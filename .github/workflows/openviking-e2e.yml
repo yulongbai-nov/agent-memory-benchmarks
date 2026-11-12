@@ -115,6 +115,29 @@ jobs:
               print(json.dumps({key: row.get(key) for key in ('question_id', 'question', 'gold_answer', 'predicted_answer', 'num_hits', 'judge_correct')}))
           print('Three answers completed and were judged')
           PY
+      - name: Run matching BM25 baseline
+        run: |
+          .venv/bin/amb run \
+            --system naive --dataset locomo \
+            --model openai:gpt-6-luna --judge --judge-model openai:gpt-6-luna \
+            --limit 1 --turns 40 --questions 3 --workers 1
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          runs = sorted(Path('runs/locomo/naive').glob('*/summary.json'))
+          if len(runs) != 1:
+              raise SystemExit(f'Expected one baseline run, found {len(runs)}')
+          summary = json.loads(runs[0].read_text())
+          rows = [json.loads(line) for line in (runs[0].parent / 'results.jsonl').read_text().splitlines()]
+          if summary.get('errors') or len(rows) != 3 or any(row.get('judge_correct') is None for row in rows):
+              raise SystemExit('Baseline contains errors or unjudged answers')
+          viking = next(Path('runs/locomo/openviking').glob('*/results.jsonl'))
+          viking_ids = [json.loads(line)['question_id'] for line in viking.read_text().splitlines()]
+          if [row['question_id'] for row in rows] != viking_ids:
+              raise SystemExit('The smoke runs did not use the same question IDs')
+          print(f"BM25 smoke accuracy: {summary.get('judge_accuracy')}")
+          PY
       - name: Save smoke results
         if: always()
         uses: actions/upload-artifact@v4
@@ -122,6 +145,7 @@ jobs:
           name: openviking-smoke-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             runs/locomo/openviking/
+            runs/locomo/naive/
             ${{ runner.temp }}/runner-info.json
           if-no-files-found: ignore
           retention-days: 7
