@@ -95,7 +95,7 @@ jobs:
       - name: Run a small scored benchmark
         run: |
           .venv/bin/amb datasets pull locomo
-          .venv/bin/amb run \
+          .venv/bin/amb --log-level info run \
             --system openviking --dataset locomo \
             --model openai:gpt-6-luna --judge --judge-model openai:gpt-6-luna \
             --llm openai:gpt-6-luna --embedding openai:text-embedding-3-small \

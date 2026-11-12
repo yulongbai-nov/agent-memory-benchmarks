@@ -23,7 +23,9 @@ end-to-end path before expanding the benchmark.
   43241258533 completed three judged questions with zero execution errors; its
   score was 0/3 and is too small to rank systems. Run 43240475091 is invalid:
   all three answers errored despite a successful workflow exit. The smoke job
-  now pins a compatible SDK and checks for errors and unjudged answers.
+  now installs OpenAI SDK 3.49.0 after the locked sync and checks for errors
+  and unjudged answers. This temporary smoke-only override differs from the
+  workspace lock; other candidates have not been validated against it.
 - [x] Run a small end-to-end benchmark and retain its results and configuration.
 - [x] Run a three-question comparison against BM25 with the same question IDs
   and runner (43242463379). OpenViking scored 0/3 with no recorded hits; BM25
