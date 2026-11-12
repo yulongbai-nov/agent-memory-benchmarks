@@ -26,6 +26,19 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           version: '0.12.0'
+      - name: Record runner hardware
+        run: |
+          python - <<'PY'
+          import json, os, platform, subprocess
+          from pathlib import Path
+
+          cpu = json.loads(subprocess.check_output(['lscpu', '--json']))['lscpu']
+          info = {'runner_os': platform.platform(), 'architecture': platform.machine(),
+                  'logical_cpus': os.cpu_count(), 'cpu': cpu,
+                  'memory': Path('/proc/meminfo').read_text().splitlines()[0],
+                  'image_os': os.getenv('ImageOS'), 'image_version': os.getenv('ImageVersion')}
+          Path(os.environ['RUNNER_TEMP'], 'runner-info.json').write_text(json.dumps(info, indent=2))
+          PY
       - name: Install the benchmark adapter
         run: |
           uv sync --locked --package openviking-benchmark
@@ -98,6 +111,8 @@ jobs:
           rows = [json.loads(line) for line in (runs[0].parent / 'results.jsonl').read_text().splitlines()]
           if summary.get('errors') or len(rows) != 3 or any(row.get('judge_correct') is None for row in rows):
               raise SystemExit('Smoke benchmark contains errors or unjudged answers')
+          for row in rows:
+              print(json.dumps({key: row.get(key) for key in ('question_id', 'question', 'gold_answer', 'predicted_answer', 'num_hits', 'judge_correct')}))
           print('Three answers completed and were judged')
           PY
       - name: Save smoke results
@@ -105,7 +120,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: openviking-smoke-${{ github.run_id }}-${{ github.run_attempt }}
-          path: runs/locomo/openviking/
+          path: |
+            runs/locomo/openviking/
+            ${{ runner.temp }}/runner-info.json
           if-no-files-found: ignore
           retention-days: 7
       - name: Remove isolated server

@@ -19,10 +19,11 @@ end-to-end path before expanding the benchmark.
 - [x] Test the `Develop` environment's `TEXT_EMBEDDING_3_SMALL_OPENAI_KEY`
   with text-embedding-3-small and GPT-6 Luna on GitHub Actions.
 - [x] Validate an OpenViking ingest-and-recall GitHub Actions smoke workflow.
-- [ ] Validate a scored OpenViking LoCoMo smoke run and save its output. Run
-  43240475091 completed but all three answers errored due to an incompatible
-  OpenAI SDK; its zero-exit workflow is not a successful scored benchmark.
-  The next run pins a newer SDK and fails on errors or unjudged answers.
+- [x] Validate a scored OpenViking LoCoMo smoke run and save its output. Run
+  43241258533 completed three judged questions with zero execution errors; its
+  score was 0/3 and is too small to rank systems. Run 43240475091 is invalid:
+  all three answers errored despite a successful workflow exit. The smoke job
+  now pins a compatible SDK and checks for errors and unjudged answers.
 - [ ] Run a small end-to-end benchmark and retain its results and configuration.
 - [ ] Run a matching comparison against an existing provider.
 - [ ] Record actual runner CPU, core count and memory; report elapsed time and
