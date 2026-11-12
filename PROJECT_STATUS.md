@@ -10,11 +10,14 @@ end-to-end path before expanding the benchmark.
 ## Current milestone: OpenViking
 
 - [x] Fork the upstream benchmark into a public repository.
-- [ ] Verify the fork's existing tests and an offline baseline locally.
-- [ ] Implement an OpenViking adapter with isolated sample state, chronological
-  ingestion, processing completion, search and source provenance.
-- [ ] Add an OpenViking GitHub Actions workflow using the existing OpenAI
-  embedding model and `TEXT_EMBEDDING_3_SMALL_OPENAI_KEY` repository secret.
+- [x] Verify the fork's existing tests and an offline baseline locally: 395
+  tests passed; a three-question LoCoMo smoke run completed without a judge.
+- [ ] Validate the OpenViking adapter's isolated sample state, chronological
+  ingestion, processing completion and search against a live server. Source
+  session attribution remains unavailable until the server supplies evidence.
+- [x] Test the `Develop` environment's `TEXT_EMBEDDING_3_SMALL_OPENAI_KEY`
+  with text-embedding-3-small and GPT-6 Luna on GitHub Actions.
+- [ ] Validate the OpenViking end-to-end GitHub Actions smoke workflow.
 - [ ] Run a small end-to-end benchmark and retain its results and configuration.
 - [ ] Run a matching comparison against an existing provider.
 - [ ] Record actual runner CPU, core count and memory; report elapsed time and
@@ -32,6 +35,6 @@ end-to-end path before expanding the benchmark.
 ## Constraints
 
 Use public GitHub-hosted runners and pin comparable evaluation settings.
-The embedding secret covers embeddings only: ingestion, answering and judging
-also require a configured language model. Do not copy secrets into the repo or
-print them. API use can incur charges even when the runner is free.
+The configured key is used for embeddings and GPT-6 Luna for the initial
+smoke test. Do not copy secrets into the repo or print them. API use can incur
+charges even when the runner is free. A smoke test is not a scored comparison.

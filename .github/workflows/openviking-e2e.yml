@@ -1,0 +1,82 @@
+name: OpenViking end-to-end smoke
+
+on:
+  push:
+    branches: [codex/openviking-benchmark]
+    paths:
+      - .github/workflows/openviking-e2e.yml
+      - benchmarks/openviking/**
+      - uv.lock
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    environment: Develop
+    timeout-minutes: 20
+    env:
+      OPENAI_API_KEY: ${{ secrets.TEXT_EMBEDDING_3_SMALL_OPENAI_KEY }}
+      OPENVIKING_BENCHMARK_KEY: amb-local-only
+      OPENVIKING_BASE_URL: http://127.0.0.1:1933
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: '0.12.0'
+      - name: Install the benchmark adapter
+        run: uv sync --locked --package openviking-benchmark
+      - name: Create private server configuration
+        run: |
+          umask 077
+          python - <<'PY'
+          import json, os
+          key = os.environ['OPENAI_API_KEY']
+          if not key:
+              raise SystemExit('OpenAI key unavailable in the Develop environment')
+          config = {
+              'server': {'host': '0.0.0.0', 'port': 1933, 'auth_mode': 'trusted', 'root_api_key': os.environ['OPENVIKING_BENCHMARK_KEY']},
+              'storage': {'workspace': '/tmp/openviking-benchmark'},
+              'embedding': {'dense': {'provider': 'openai', 'model': 'text-embedding-3-small', 'api_key': key, 'dimension': 1536, 'input': 'text'}},
+              'vlm': {'provider': 'openai', 'model': 'gpt-6-luna', 'api_key': key, 'reasoning_effort': 'none', 'max_tokens': 2048},
+          }
+          with open(os.path.join(os.environ['RUNNER_TEMP'], 'openviking-conf.json'), 'w') as file:
+              json.dump(config, file)
+          PY
+      - name: Start isolated OpenViking server
+        run: |
+          docker run -d --name amb-openviking \
+            -p 127.0.0.1:1933:1933 \
+            -v "$RUNNER_TEMP/openviking-conf.json:/app/.openviking/ov.conf:ro" \
+            ghcr.io/volcengine/openviking@sha256:cd1a62b698c5dd4c2685acf5e3f8b1b543a4c32d25f81dec0ceff23e7a96de9d --without-bot
+          for i in $(seq 1 180); do
+            if curl -fsS -H "X-API-Key: $OPENVIKING_BENCHMARK_KEY" http://127.0.0.1:1933/health >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo 'OpenViking server did not become healthy' >&2
+          exit 1
+      - name: Ingest and recall a memory
+        run: |
+          uv run --locked --package openviking-benchmark python - <<'PY'
+          from amb.contracts.conversation import Session, Turn
+          from src.memory import OpenVikingMemory
+
+          memory = OpenVikingMemory()
+          try:
+              memory.setup()
+              memory.ingest_session('smoke', Session(session_id='one', turns=[
+                  Turn(turn_id='1', speaker='Maya', text='I have a pet tortoise named Saffron.')
+              ]))
+              hits = memory.search('smoke', 'What is Maya’s tortoise named?')
+              assert any('saffron' in hit.content.lower() for hit in hits), 'Expected memory was not retrieved'
+              print('OpenViking ingest and recall: OK')
+          finally:
+              memory.teardown()
+          PY
+      - name: Remove isolated server
+        if: always()
+        run: docker rm -f amb-openviking || true

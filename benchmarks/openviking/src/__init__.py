@@ -1,0 +1,1 @@
+"""OpenViking benchmark integration."""
