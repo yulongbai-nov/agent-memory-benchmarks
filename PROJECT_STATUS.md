@@ -30,11 +30,12 @@ end-to-end path before expanding the benchmark.
 - [x] Run a three-question comparison against BM25 with the same question IDs
   and runner (43242463379). OpenViking scored 0/3 with no recorded hits; BM25
   scored 2/3. This sample is too small to rank systems.
-- [ ] Investigate the lack of OpenViking hits on the LoCoMo smoke questions.
-  Run 43243874437 showed zero memory writes for all three LoCoMo sessions,
-  although the synthetic fact produced a memory. Test one dated, speaker-labelled
-  transcript per source session and report this mapping in comparisons. Direct
-  synthetic recall passed in several runs and failed once.
+- [ ] Improve and evaluate OpenViking's LoCoMo ingestion. In run 43243874437,
+  individual user messages produced zero memory writes for all three sessions.
+  Run 43244733926 submitted one dated, speaker-labelled transcript per source
+  session and produced one memory edit and search hits, but still scored 0/3;
+  BM25 scored 1/3. This tiny sample is not a ranking. Direct synthetic recall
+  passed in several runs and failed once.
 - [ ] Extend recorded CPU, core count and memory capacity with measured
   complete-stack resource use and report elapsed times transparently.
 - [ ] Display comparison results with clear quality, speed, cost, resource and

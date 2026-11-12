@@ -22,6 +22,8 @@
 
 """Check the OpenViking adapter against the service's HTTP contract."""
 
+import json
+
 import httpx
 import pytest
 from src.memory import OpenVikingMemory
@@ -32,12 +34,15 @@ from amb.contracts.conversation import Session, Turn
 def test_commit_then_recall_with_isolated_user(monkeypatch: pytest.MonkeyPatch) -> None:
     """Each sample commits, waits and recalls in its own user namespace."""
     calls = []
+    messages = []
 
     def handle(request: httpx.Request) -> httpx.Response:
         calls.append(
             (request.method, request.url.path, request.headers["X-OpenViking-User"])
         )
         path = request.url.path
+        if path.endswith("/messages"):
+            messages.append(json.loads(request.content))
         if path.endswith("/commit"):
             result = {"task_id": "task1"}
         elif path == "/api/v1/tasks/task1":
@@ -67,7 +72,10 @@ def test_commit_then_recall_with_isolated_user(monkeypatch: pytest.MonkeyPatch) 
         "c",
         Session(
             session_id="s",
-            turns=[Turn(turn_id="t", speaker="Maya", text="My tortoise is Saffron.")],
+            turns=[
+                Turn(turn_id="t", speaker="Maya", text="My tortoise is Saffron."),
+                Turn(turn_id="u", speaker="Alex", text="That is a lovely name."),
+            ],
         ),
     )
     hits = memory.search("c", "What is my tortoise called?")
@@ -77,5 +85,8 @@ def test_commit_then_recall_with_isolated_user(monkeypatch: pytest.MonkeyPatch) 
     assert all(user == memory.user_id for _, _, user in calls)
     assert any(path.endswith("/commit") for _, path, _ in calls)
     assert any(path == "/api/v1/system/wait" for _, path, _ in calls)
+    assert len(messages) == 1
+    assert "Maya: My tortoise is Saffron." in messages[0]["content"]
+    assert "Alex: That is a lovely name." in messages[0]["content"]
     assert hits[0].content == "Maya has a tortoise called Saffron."
     assert hits[0].session_ids == []
