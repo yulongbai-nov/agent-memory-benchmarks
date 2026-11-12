@@ -34,8 +34,9 @@ end-to-end path before expanding the benchmark.
   individual user messages produced zero memory writes for all three sessions.
   Run 43244733926 submitted one dated, speaker-labelled transcript per source
   session and produced one memory edit and search hits, but still scored 0/3;
-  BM25 scored 1/3. This tiny sample is not a ranking. Direct synthetic recall
-  passed in several runs and failed once.
+  BM25 scored 1/3. The repeat, 43245329359, produced two edits and hits but
+  still scored 0/3, versus BM25 2/3. This tiny sample is not a ranking. Direct
+  synthetic recall passed in several runs and failed once.
 - [ ] Extend recorded CPU, core count and memory capacity with measured
   complete-stack resource use and report elapsed times transparently.
 - [ ] Display comparison results with clear quality, speed, cost, resource and
