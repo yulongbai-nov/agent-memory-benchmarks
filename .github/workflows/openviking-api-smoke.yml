@@ -30,7 +30,7 @@ jobs:
 
           checks = [
               ('embeddings', {'model': 'text-embedding-3-small', 'input': 'A short test.'}),
-              ('chat/completions', {'model': 'gpt-4.1-mini', 'messages': [{'role': 'user', 'content': 'Reply OK.'}], 'max_tokens': 4}),
+              ('responses', {'model': 'gpt-6-luna', 'input': 'Reply OK.', 'reasoning': {'effort': 'none'}, 'max_output_tokens': 16}),
           ]
           for endpoint, payload in checks:
               request = urllib.request.Request(
@@ -46,7 +46,7 @@ jobs:
                   raise SystemExit(f'{endpoint}: HTTP {exc.code}') from None
               if endpoint == 'embeddings' and not result.get('data'):
                   raise SystemExit('Embedding response contained no vectors.')
-              if endpoint == 'chat/completions' and not result.get('choices'):
-                  raise SystemExit('Language-model response contained no choices.')
+              if endpoint == 'responses' and not result.get('output'):
+                  raise SystemExit('Language-model response contained no output.')
               print(f'{endpoint}: OK')
           PY
