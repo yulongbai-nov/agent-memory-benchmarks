@@ -4,6 +4,9 @@ The adapter uses OpenViking's HTTP session commit and memory search APIs. Each
 benchmark sample gets its own trusted-mode user namespace; it must only be used
 with a private, isolated benchmark server. The server must be configured with
 the models passed to the benchmark. Commit processing is awaited before search.
+Each source session is submitted as one user message containing its dated,
+speaker-labelled transcript. This mapping should be considered when comparing
+it with systems that receive individual dialogue turns.
 
 The server stores extracted memories in its own namespace. Search results do not
 currently expose verified source-session IDs to this adapter, so attribution is

@@ -117,14 +117,14 @@ class OpenVikingMemory(Memory):
             RuntimeError: If extraction or background indexing fails.
             TimeoutError: If extraction does not complete in time.
         """
-        for turn in session.turns:
-            self._request(
-                "POST",
-                f"/api/v1/sessions/{self.session_id}/messages",
-                json={"role": "user", "content": session.dated(turn)},
-            )
         if not session.turns:
             return
+        transcript = "\n".join(session.dated(turn) for turn in session.turns)
+        self._request(
+            "POST",
+            f"/api/v1/sessions/{self.session_id}/messages",
+            json={"role": "user", "content": transcript},
+        )
         result = self._request(
             "POST", f"/api/v1/sessions/{self.session_id}/commit", json={}
         )
