@@ -12,6 +12,7 @@ permissions:
 jobs:
   api-smoke:
     runs-on: ubuntu-24.04
+    environment: Develop
     timeout-minutes: 5
     env:
       OPENAI_API_KEY: ${{ secrets.TEXT_EMBEDDING_3_SMALL_OPENAI_KEY }}
