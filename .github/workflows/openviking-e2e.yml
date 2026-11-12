@@ -2,7 +2,7 @@ name: OpenViking end-to-end smoke
 
 on:
   push:
-    branches: [codex/openviking-benchmark]
+    branches: [codex/openviking-benchmark, feat/openviking-benchmark]
     paths:
       - .github/workflows/openviking-e2e.yml
       - benchmarks/openviking/**

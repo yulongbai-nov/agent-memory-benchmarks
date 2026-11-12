@@ -2,7 +2,7 @@ name: OpenViking API credentials smoke
 
 on:
   push:
-    branches: [codex/openviking-benchmark]
+    branches: [codex/openviking-benchmark, feat/openviking-benchmark]
     paths: [.github/workflows/openviking-api-smoke.yml]
   workflow_dispatch:
 
