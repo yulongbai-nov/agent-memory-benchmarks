@@ -24,10 +24,14 @@ end-to-end path before expanding the benchmark.
   score was 0/3 and is too small to rank systems. Run 43240475091 is invalid:
   all three answers errored despite a successful workflow exit. The smoke job
   now pins a compatible SDK and checks for errors and unjudged answers.
-- [ ] Run a small end-to-end benchmark and retain its results and configuration.
-- [ ] Run a matching comparison against an existing provider.
-- [ ] Record actual runner CPU, core count and memory; report elapsed time and
-  resource use without pretending different CPUs are identical.
+- [x] Run a small end-to-end benchmark and retain its results and configuration.
+- [x] Run a three-question comparison against BM25 with the same question IDs
+  and runner (43242463379). OpenViking scored 0/3 with no recorded hits; BM25
+  scored 2/3. This sample is too small to rank systems.
+- [ ] Investigate the lack of OpenViking hits on the LoCoMo smoke questions;
+  direct synthetic recall passed in several runs and failed once.
+- [ ] Extend recorded CPU, core count and memory capacity with measured
+  complete-stack resource use and report elapsed times transparently.
 - [ ] Display comparison results with clear quality, speed, cost, resource and
   completion status.
 
@@ -43,4 +47,5 @@ end-to-end path before expanding the benchmark.
 Use public GitHub-hosted runners and pin comparable evaluation settings.
 The configured key is used for embeddings and GPT-6 Luna for the initial
 smoke test. Do not copy secrets into the repo or print them. API use can incur
-charges even when the runner is free. A smoke test is not a scored comparison.
+charges even when the runner is free. A smoke test is not a representative
+benchmark comparison.
