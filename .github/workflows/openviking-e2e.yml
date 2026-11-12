@@ -27,7 +27,9 @@ jobs:
         with:
           version: '0.12.0'
       - name: Install the benchmark adapter
-        run: uv sync --locked --package openviking-benchmark
+        run: |
+          uv sync --locked --package openviking-benchmark
+          uv pip install --no-config --python .venv/bin/python openai==3.49.0
       - name: Create private server configuration
         run: |
           umask 077
@@ -61,7 +63,7 @@ jobs:
           exit 1
       - name: Ingest and recall a memory
         run: |
-          uv run --locked --package openviking-benchmark python - <<'PY'
+          .venv/bin/python - <<'PY'
           from amb.contracts.conversation import Session, Turn
           from src.memory import OpenVikingMemory
 
@@ -79,12 +81,25 @@ jobs:
           PY
       - name: Run a small scored benchmark
         run: |
-          uv run --locked --package openviking-benchmark amb datasets pull locomo
-          uv run --locked --package openviking-benchmark amb run \
+          .venv/bin/amb datasets pull locomo
+          .venv/bin/amb run \
             --system openviking --dataset locomo \
             --model openai:gpt-6-luna --judge --judge-model openai:gpt-6-luna \
             --llm openai:gpt-6-luna --embedding openai:text-embedding-3-small \
             --limit 1 --turns 40 --questions 3 --workers 1
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          runs = sorted(Path('runs/locomo/openviking').glob('*/summary.json'))
+          if len(runs) != 1:
+              raise SystemExit(f'Expected one smoke run, found {len(runs)}')
+          summary = json.loads(runs[0].read_text())
+          rows = [json.loads(line) for line in (runs[0].parent / 'results.jsonl').read_text().splitlines()]
+          if summary.get('errors') or len(rows) != 3 or any(row.get('judge_correct') is None for row in rows):
+              raise SystemExit('Smoke benchmark contains errors or unjudged answers')
+          print('Three answers completed and were judged')
+          PY
       - name: Save smoke results
         if: always()
         uses: actions/upload-artifact@v4

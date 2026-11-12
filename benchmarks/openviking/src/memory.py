@@ -38,6 +38,17 @@ class OpenVikingMemory(Memory):
         self.session_id = "amb-" + uuid.uuid4().hex
         self.client: httpx.Client | None = None
 
+    def version(self) -> str | None:
+        """Read the version of the server actually being benchmarked."""
+        url = os.environ.get("OPENVIKING_BASE_URL", "http://localhost:1933")
+        response = httpx.get(
+            f"{url}/health",
+            headers={"X-API-Key": os.environ.get("OPENVIKING_BENCHMARK_KEY", "amb-local-only")},
+            timeout=10.0,
+        )
+        response.raise_for_status()
+        return response.json().get("version")
+
     def setup(self) -> None:
         """Create a session in a unique OpenViking user namespace."""
         self.client = httpx.Client(
