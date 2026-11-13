@@ -1,0 +1,46 @@
+name: EverOS LoCoMo-Refined conversations
+
+on:
+  push:
+    branches: [feat/openviking-benchmark]
+    paths: ['.github/workflows/everos-refined.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  conversation:
+    name: ${{ matrix.sample }}
+    runs-on: ubuntu-24.04
+    environment: Develop
+    timeout-minutes: 95
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        sample: [conv-26, conv-41, conv-42, conv-43, conv-44, conv-47, conv-48, conv-49, conv-50]
+    env:
+      OPENAI_API_KEY: ${{ secrets.TEXT_EMBEDDING_3_SMALL_OPENAI_KEY }}
+      COMPOSE_PROJECT_NAME: amb-everos
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build EverOS
+        run: docker compose -f benchmarks/everos/docker-compose.yaml build
+      - name: Measure one complete conversation
+        env:
+          SAMPLE: ${{ matrix.sample }}
+        run: python scripts/comparator/run_candidate.py everos --sample "$SAMPLE"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: everos-${{ matrix.sample }}
+          path: |
+            comparator-runs/
+            !comparator-runs/locomo-input/**
+          if-no-files-found: ignore
+      - name: Remove isolated services
+        if: always()
+        run: docker compose -f benchmarks/everos/docker-compose.yaml down -v

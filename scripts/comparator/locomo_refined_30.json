@@ -1,0 +1,136 @@
+{
+  "questions": [
+    {
+      "id": "conv-41#q0034",
+      "prompt_sha256": "eacdf9d390df0636d1fad74a0749d796b5d49d3fed030096fe22bce21e41cf83"
+    },
+    {
+      "id": "conv-50#q0055",
+      "prompt_sha256": "1839e6f3504d1fc0306608639904b524ca2d514b64429195adb79b3fdf43ba25"
+    },
+    {
+      "id": "conv-42#q0058",
+      "prompt_sha256": "bdc96a6676cece6d609b5fb624f27e06a31bc18fbe722ba110a1d7d020a3c3e9"
+    },
+    {
+      "id": "conv-50#q0092",
+      "prompt_sha256": "5ffb6230a113278b14a430bc17cde0910e9e1bf3974582bac6c88913c5dd19ec"
+    },
+    {
+      "id": "conv-26#q0011",
+      "prompt_sha256": "3fdc12c30baf5719dfa614846c2ebc30f970fed0b1b3c04c4fe0bc2f5f50199a"
+    },
+    {
+      "id": "conv-42#q0061",
+      "prompt_sha256": "a52a9be1161761ac18adccd9266b96e5a47b58b27d552c4f68ba7610e69f9522"
+    },
+    {
+      "id": "conv-42#q0000",
+      "prompt_sha256": "6a715426ecddb362d8f89044b088e80cf613440b7073fb4be2679a24be6d0ac3"
+    },
+    {
+      "id": "conv-26#q0066",
+      "prompt_sha256": "d655f74fe3f7194564489450f0b77e69eacf705269e77bbae3c6d34242ab00be"
+    },
+    {
+      "id": "conv-41#q0014",
+      "prompt_sha256": "0437a24cf863488d9dad4a5e5135efc6dc1f5b0e27594fa638ea8fc4c979d37d"
+    },
+    {
+      "id": "conv-47#q0048",
+      "prompt_sha256": "562823ecff81ae40d99824f4e6c07fd82ce0e89d989d94fa7afb04bd0235a34b"
+    },
+    {
+      "id": "conv-47#q0133",
+      "prompt_sha256": "aaf2fabb47d47c9de0bfb76e4f4453cef41ea1fff798b421973304d70c21366c"
+    },
+    {
+      "id": "conv-43#q0062",
+      "prompt_sha256": "de67b08d3614c0aced9147b38790c62fde77920a87abe146b6c55015f8d0ebfa"
+    },
+    {
+      "id": "conv-43#q0028",
+      "prompt_sha256": "d24c8cf6a853279501fe7e0669f525f9e6a57753c7ddbedadd9405a47a05c458"
+    },
+    {
+      "id": "conv-43#q0027",
+      "prompt_sha256": "65ef1b64bdc256ea49b7da1157c22aa1a47fb09fc9a225db6f6ba89a7c65900a"
+    },
+    {
+      "id": "conv-43#q0020",
+      "prompt_sha256": "07690d642b3e8b9b4495fd1833eb0e20ce4dd9d68e5208bb925c543cd2a66ab6"
+    },
+    {
+      "id": "conv-44#q0098",
+      "prompt_sha256": "8625ef7aebfad07e1e92210b2e1dc3b64a41f7cafcdc4ba12d1df88f037150af"
+    },
+    {
+      "id": "conv-47#q0014",
+      "prompt_sha256": "49a05dbddec2a1f88225bc2002eb62eadc89e77b78e2b34b741ecde5ae6f0acc"
+    },
+    {
+      "id": "conv-49#q0033",
+      "prompt_sha256": "30af3a0d859a431d7a09803209b16a6e6a0b7a84c7dd2ef1edf3f39f52348446"
+    },
+    {
+      "id": "conv-47#q0024",
+      "prompt_sha256": "c3943690c080a746082ecd29506cc8fccfe23ef4af6d986226264c1264ab8869"
+    },
+    {
+      "id": "conv-42#q0162",
+      "prompt_sha256": "b46c1703bd098707911e19a142e1e7506c3f212371d0df93f7fe8e8a58f25eeb"
+    },
+    {
+      "id": "conv-41#q0006",
+      "prompt_sha256": "1cb0e4bf11aa6c1f754d919a9cfb2081fdaf20a9690f9df21cb39ecf6a3231d5"
+    },
+    {
+      "id": "conv-44#q0000",
+      "prompt_sha256": "55f57356669597f69d87aee3f321e1f8426164d0e6a7f90dcbc5f3e1df54831e"
+    },
+    {
+      "id": "conv-48#q0066",
+      "prompt_sha256": "e0e1f5eda0c15e702a4b088f254186d64a34eff0309ff11976cdcfe411c6bf62"
+    },
+    {
+      "id": "conv-49#q0072",
+      "prompt_sha256": "0e739c7fa951c9a6190ef899294c865eb86359d9f5302e7fab14a342492ed927"
+    },
+    {
+      "id": "conv-42#q0042",
+      "prompt_sha256": "adf0c4457b1e625cacc0dc9b471951e6629e6333b65620aaa8672aa88ec9c4ca"
+    },
+    {
+      "id": "conv-48#q0019",
+      "prompt_sha256": "e5598d0bd9f1ff698c0c7aa88edb7808a1b0e42938322b4293df149d4518da00"
+    },
+    {
+      "id": "conv-49#q0044",
+      "prompt_sha256": "49870872e60303befffdec02fb7d298ef0519cabedb0c2b9b45d08340dc86f6b"
+    },
+    {
+      "id": "conv-44#q0071",
+      "prompt_sha256": "f77669ab94a833134a80cb000c4c280e704968bc124a16339a416ee77ce5f2bd"
+    },
+    {
+      "id": "conv-47#q0022",
+      "prompt_sha256": "7fc22ed7b7fa49e2d799df9fa851ce37936e22bd50bdd349b13aa7559a959c7d"
+    },
+    {
+      "id": "conv-42#q0005",
+      "prompt_sha256": "7da14a0dfafcc622f7f78de4d24445007c113f073249411be0264fc3985893d9"
+    }
+  ],
+  "files": [
+    {
+      "path": "locomo.jsonl",
+      "url": "https://raw.githubusercontent.com/mem-eval-suite/LoCoMo_refined/887091190789e8d6760e70b9edd696539923dc4f/data/public/questions.jsonl",
+      "sha256": "4dd84cf65a28ece0ed6b2a1b7b2700ea639f4e7b2c5e1afcc511e47e81732790"
+    },
+    {
+      "path": "conversations.jsonl",
+      "url": "https://raw.githubusercontent.com/mem-eval-suite/LoCoMo_refined/887091190789e8d6760e70b9edd696539923dc4f/data/public/conversations.jsonl",
+      "sha256": "abbe220013815b1761c07d9ab7d6147ee08fb089f1a8a083fd31188cdcd91444"
+    }
+  ]
+}

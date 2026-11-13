@@ -1,0 +1,61 @@
+name: SWE-ContextBench prior-issue retrieval
+
+on:
+  push:
+    branches: [feat/openviking-benchmark]
+    paths:
+      - .github/workflows/swe-context-retrieval.yml
+      - scripts/comparator/swe_context_retrieval.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  retrieve:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: yulongbai-nov/agent-memory-lab
+          ref: 19e8d3ac8856a97ced59808368e20fd1fb2a9163
+          path: lab-source
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: '0.12.0'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.22.1'
+      - name: Install pinned runtimes
+        run: |
+          uv sync --locked
+          uv pip install --no-config --python .venv/bin/python pyarrow==26.0.1
+          uv pip install --no-config --python .venv/bin/python --no-deps ./scripts/comparator/agent_memory_lab
+          npm --prefix lab-source ci --ignore-scripts --no-audit --no-fund
+          npm --prefix lab-source run build
+      - name: Fetch the public benchmark
+        run: |
+          mkdir -p swe-input swe-results
+          source=https://huggingface.co/datasets/jiayuanz3/SWEContextBench/resolve/12c65bd15e2559bc808065565e941ee7bbbd008f/data
+          for kind in Experience Related Relationship; do
+            file="SWEContextBench_${kind}.parquet"
+            curl --fail --silent --show-error --location --retry 3 "$source/$file" --output "swe-input/$file"
+          done
+          lscpu > swe-results/runner.txt
+      - name: Compare the two offline retrieval systems on the same runner
+        env:
+          AGENT_MEMORY_LAB_ROOT: ${{ github.workspace }}/lab-source
+        run: |
+          for system in naive agent-memory-lab; do
+            .venv/bin/python scripts/comparator/swe_context_retrieval.py "$system" --data swe-input --output "swe-results/$system.json"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: swe-contextbench-retrieval
+          path: swe-results/
+          if-no-files-found: error

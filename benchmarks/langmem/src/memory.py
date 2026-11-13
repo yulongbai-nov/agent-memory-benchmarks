@@ -144,10 +144,16 @@ class LangMemMemory(Memory):
             )
             self._store.setup()
         model: Any = self.model
-        if split_model(self.model)[0] == "anthropic":
+        provider, model_name = split_model(self.model)
+        if provider == "anthropic":
             from langchain.chat_models import init_chat_model
 
             model = init_chat_model(self.model, max_tokens=ANTHROPIC_MAX_TOKENS)
+        elif provider == "openai" and model_name.startswith("gpt-6"):
+            from langchain.chat_models import init_chat_model
+
+            # GPT-6 Chat Completions supports function tools with reasoning off.
+            model = init_chat_model(self.model, reasoning_effort="none")
         self._manager = create_memory_store_manager(
             model,
             # templated per call: the session segment is what makes a hit

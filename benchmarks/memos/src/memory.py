@@ -99,7 +99,7 @@ DEFAULT_SEARCH_MODE = "fast"
 # response. 8192 is the ceiling MemOS's own LLMConfig defaults to.
 DEFAULT_MAX_TOKENS = 8192
 # model families that reject temperature, top_p and max_tokens
-_REASONING_MODELS = ("gpt-5", "o1", "o3", "o4")
+_REASONING_MODELS = ("gpt-5", "gpt-6", "o1", "o3", "o4")
 # MemOS derives the graph's tenant tag from the user id by stripping "-"
 # and "_", and a cube id also names on-disk state, so a tenant name has
 # to stay inside a charset both leave alone
