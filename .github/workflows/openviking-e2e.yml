@@ -66,7 +66,7 @@ jobs:
             -p 127.0.0.1:1933:1933 \
             -v "$RUNNER_TEMP/openviking-conf.json:/app/.openviking/ov.conf:ro" \
             ghcr.io/volcengine/openviking@sha256:cd1a62b698c5dd4c2685acf5e3f8b1b543a4c32d25f81dec0ceff23e7a96de9d --without-bot
-          for i in $(seq 1 180); do
+          for ((attempt = 0; attempt < 180; attempt++)); do
             if curl -fsS -H "X-API-Key: $OPENVIKING_BENCHMARK_KEY" http://127.0.0.1:1933/health >/dev/null; then
               exit 0
             fi
@@ -80,14 +80,16 @@ jobs:
           from amb.contracts.conversation import Session, Turn
           from src.memory import OpenVikingMemory
 
-          memory = OpenVikingMemory()
+          memory = OpenVikingMemory(index_transcripts=True)
           try:
               memory.setup()
               memory.ingest_session('smoke', Session(session_id='one', turns=[
                   Turn(turn_id='1', speaker='Maya', text='I have a pet tortoise named Saffron.')
               ]))
               hits = memory.search('smoke', 'What is Maya’s tortoise named?')
-              assert any('saffron' in hit.content.lower() for hit in hits), 'Expected memory was not retrieved'
+              assert any(
+                  hit.turn_ids == ['1'] and 'saffron' in hit.content.lower() for hit in hits
+              ), 'Expected indexed source turn was not retrieved'
               print('OpenViking ingest and recall: OK')
           finally:
               memory.teardown()
@@ -99,6 +101,7 @@ jobs:
             --system openviking --dataset locomo \
             --model openai:gpt-6-luna --judge --judge-model openai:gpt-6-luna \
             --llm openai:gpt-6-luna --embedding openai:text-embedding-3-small \
+            --param index_transcripts=true \
             --limit 1 --turns 40 --questions 3 --workers 1
           python - <<'PY'
           import json
@@ -112,7 +115,10 @@ jobs:
           if summary.get('errors') or len(rows) != 3 or any(row.get('judge_correct') is None for row in rows):
               raise SystemExit('Smoke benchmark contains errors or unjudged answers')
           for row in rows:
-              print(json.dumps({key: row.get(key) for key in ('question_id', 'question', 'gold_answer', 'predicted_answer', 'num_hits', 'judge_correct')}))
+              print(json.dumps({key: row.get(key) for key in (
+                  'question_id', 'question', 'gold_answer', 'predicted_answer', 'num_hits',
+                  'evidence_session_ids', 'retrieved_session_ids', 'judge_correct',
+              )}))
           print('Three answers completed and were judged')
           PY
       - name: Run matching BM25 baseline
@@ -136,6 +142,10 @@ jobs:
           viking_ids = [json.loads(line)['question_id'] for line in viking.read_text().splitlines()]
           if [row['question_id'] for row in rows] != viking_ids:
               raise SystemExit('The smoke runs did not use the same question IDs')
+          for row in rows:
+              print(json.dumps({key: row.get(key) for key in (
+                  'question_id', 'predicted_answer', 'judge_correct',
+              )}))
           print(f"BM25 smoke accuracy: {summary.get('judge_accuracy')}")
           PY
       - name: Save smoke results

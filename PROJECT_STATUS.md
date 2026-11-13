@@ -37,6 +37,10 @@ end-to-end path before expanding the benchmark.
   BM25 scored 1/3. The repeat, 43245329359, produced two edits and hits but
   still scored 0/3, versus BM25 2/3. This tiny sample is not a ranking. Direct
   synthetic recall passed in several runs and failed once.
+  The follow-up smoke uses `index_transcripts=true`. OpenViking keeps its
+  session extraction and also indexes the original dated turns under private
+  resources. Search ranks both sources and returns the original turn's
+  provenance when available.
 - [ ] Extend recorded CPU, core count and memory capacity with measured
   complete-stack resource use and report elapsed times transparently.
 - [ ] Display comparison results with clear quality, speed, cost, resource and

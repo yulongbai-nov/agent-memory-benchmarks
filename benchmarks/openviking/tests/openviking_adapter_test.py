@@ -35,6 +35,8 @@ def test_commit_then_recall_with_isolated_user(monkeypatch: pytest.MonkeyPatch) 
     """Each sample commits, waits and recalls in its own user namespace."""
     calls = []
     messages = []
+    index_writes = []
+    searches = []
 
     def handle(request: httpx.Request) -> httpx.Response:
         calls.append(
@@ -43,16 +45,36 @@ def test_commit_then_recall_with_isolated_user(monkeypatch: pytest.MonkeyPatch) 
         path = request.url.path
         if path.endswith("/messages"):
             messages.append(json.loads(request.content))
+        if path == "/api/v1/content/batch-write":
+            index_writes.append(json.loads(request.content))
         if path.endswith("/commit"):
             result = {"task_id": "task1"}
         elif path == "/api/v1/tasks/task1":
             result = {"status": "completed"}
         elif path == "/api/v1/search/find":
+            searches.append(json.loads(request.content))
             result = {
-                "memories": [{"uri": "viking://user/x/memories/pet.md", "score": 0.8}]
+                "memories": [
+                    {
+                        "uri": "viking://user/x/memories/pet.md",
+                        "score": 0.8,
+                        "content": "Maya has a tortoise called Saffron.",
+                    },
+                    {"uri": "viking://user/x/memories/unreadable.md", "score": 0.95},
+                ],
+                "resources": [
+                    {
+                        "uri": index_writes[0]["operations"][0]["uri"],
+                        "score": 0.9,
+                        "content": index_writes[0]["operations"][0]["content"],
+                    },
+                    {
+                        "uri": "viking://user/other/resources/pet.txt",
+                        "score": 1.0,
+                        "content": "Unrelated context.",
+                    },
+                ],
             }
-        elif path == "/api/v1/content/read":
-            result = "Maya has a tortoise called Saffron."
         else:
             result = {}
         return httpx.Response(200, json={"status": "ok", "result": result})
@@ -65,20 +87,22 @@ def test_commit_then_recall_with_isolated_user(monkeypatch: pytest.MonkeyPatch) 
             transport=httpx.MockTransport(handle), **kwargs
         ),
     )
-    memory = OpenVikingMemory()
+    memory = OpenVikingMemory(index_transcripts=True)
     second = OpenVikingMemory()
     memory.setup()
     memory.ingest_session(
         "c",
         Session(
             session_id="s",
+            timestamp="2026-11-12",
             turns=[
                 Turn(turn_id="t", speaker="Maya", text="My tortoise is Saffron."),
                 Turn(turn_id="u", speaker="Alex", text="That is a lovely name."),
             ],
         ),
     )
-    hits = memory.search("c", "What is my tortoise called?")
+    hits = memory.search("c", "What is my tortoise called?", k=2)
+    limited = memory.search("c", "What is my tortoise called?", k=1)
     memory.teardown()
 
     assert memory.user_id != second.user_id
@@ -88,5 +112,17 @@ def test_commit_then_recall_with_isolated_user(monkeypatch: pytest.MonkeyPatch) 
     assert len(messages) == 1
     assert "Maya: My tortoise is Saffron." in messages[0]["content"]
     assert "Alex: That is a lovely name." in messages[0]["content"]
-    assert hits[0].content == "Maya has a tortoise called Saffron."
-    assert hits[0].session_ids == []
+    assert index_writes[0]["wait"] is True
+    assert index_writes[0]["processing_mode"] == "vectors_only"
+    assert len(index_writes[0]["operations"]) == 2
+    assert searches[0]["target_uri"] == ["viking://~/memories", memory.transcript_root]
+    assert searches[0]["read_content"] is True
+    assert searches[0]["level"] == 2
+    assert [hit.content for hit in hits] == [
+        "[12 November 2026] Maya: My tortoise is Saffron.",
+        "Maya has a tortoise called Saffron.",
+    ]
+    assert hits[0].session_ids == ["s"]
+    assert hits[0].turn_ids == ["t"]
+    assert hits[1].session_ids == []
+    assert limited == hits[:1]

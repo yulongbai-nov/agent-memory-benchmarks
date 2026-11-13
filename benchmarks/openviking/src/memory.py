@@ -48,12 +48,14 @@ class OpenVikingMemory(Memory):
         self,
         model: str = "openai:gpt-6-luna",
         embedding_model: str = "openai:text-embedding-3-small",
+        index_transcripts: bool = False,
         **params: object,
     ) -> None:
         """Set the expected server models and an isolated benchmark identity.
 
         Raises:
-            ValueError: If models differ from the smoke server configuration.
+            ValueError: If models differ from the smoke server configuration
+                or index_transcripts is not a boolean.
         """
         super().__init__(**params)
         self.model_name(model, "llm")
@@ -67,9 +69,14 @@ class OpenVikingMemory(Memory):
             )
         self.model = model
         self.embedding_model = embedding_model
+        if not isinstance(index_transcripts, bool):
+            raise ValueError("index_transcripts must be true or false")
+        self.index_transcripts = index_transcripts
         self.user_id = "amb-" + uuid.uuid4().hex
         self.session_id = "amb-" + uuid.uuid4().hex
         self.client: httpx.Client | None = None
+        self.transcript_root = f"viking://user/{self.user_id}/resources/transcripts"
+        self.sources: dict[str, tuple[str, str]] = {}
 
     def version(self) -> str | None:
         """Read the version of the server actually being benchmarked."""
@@ -100,6 +107,10 @@ class OpenVikingMemory(Memory):
             timeout=300.0,
         )
         self._request("POST", "/api/v1/sessions", json={"session_id": self.session_id})
+        if self.index_transcripts:
+            self._request(
+                "POST", "/api/v1/fs/mkdir", json={"uri": self.transcript_root}
+            )
 
     def _request(self, method: str, path: str, **kwargs: object) -> object:
         assert self.client is not None
@@ -119,11 +130,13 @@ class OpenVikingMemory(Memory):
         """
         if not session.turns:
             return
-        transcript = "\n".join(session.dated(turn) for turn in session.turns)
+        lines = [session.dated(turn) for turn in session.turns]
+        if self.index_transcripts:
+            self._index_turns(session, lines)
         self._request(
             "POST",
             f"/api/v1/sessions/{self.session_id}/messages",
-            json={"role": "user", "content": transcript},
+            json={"role": "user", "content": "\n".join(lines)},
         )
         result = self._request(
             "POST", f"/api/v1/sessions/{self.session_id}/commit", json={}
@@ -156,26 +169,76 @@ class OpenVikingMemory(Memory):
             time.sleep(1)
         raise TimeoutError("OpenViking memory extraction timed out")
 
+    def _index_turns(self, session: Session, lines: list[str]) -> None:
+        operations = []
+        sources = {}
+        for turn, line in zip(session.turns, lines, strict=True):
+            uri = f"{self.transcript_root}/{len(self.sources) + len(sources):08d}.txt"
+            operations.append({"uri": uri, "content": line})
+            sources[uri] = (session.session_id, turn.turn_id)
+        self._request(
+            "POST",
+            "/api/v1/content/batch-write",
+            json={
+                "root_uri": self.transcript_root,
+                "operations": operations,
+                "processing_mode": "vectors_only",
+                "wait": True,
+            },
+        )
+        self.sources.update(sources)
+
     def search(self, conversation_id: str, query: str, k: int = 10) -> list[MemoryHit]:
-        """Retrieve memory contents without inventing source-session attribution."""
+        """Rank extracted memories and any indexed source turns with OpenViking."""
+        if k < 1:
+            return []
+        targets = ["viking://~/memories"]
+        if self.index_transcripts:
+            targets.append(self.transcript_root)
         result = self._request(
             "POST",
             "/api/v1/search/find",
-            json={"query": query, "target_uri": "viking://~/memories", "limit": k},
+            json={
+                "query": query,
+                "target_uri": targets,
+                "limit": k,
+                "level": 2,
+                "read_content": True,
+            },
         )
         assert isinstance(result, dict)
-        logger.info(
-            "OpenViking memory search returned {} hits", len(result.get("memories", []))
-        )
+        items = result.get("memories", []) + [
+            item for item in result.get("resources", []) if item["uri"] in self.sources
+        ]
+        # The server groups its ranked hits by context type in the response.
+        items.sort(key=lambda item: item.get("score") or 0.0, reverse=True)
         hits = []
-        for item in result.get("memories", []):
+        seen = set()
+        for item in items:
             uri = item["uri"]
-            content = self._request("GET", "/api/v1/content/read", params={"uri": uri})
+            if uri in seen:
+                continue
+            seen.add(uri)
+            content = item.get("content")
+            if not isinstance(content, str) or not content.strip():
+                continue
+            source = self.sources.get(uri)
             hits.append(
                 MemoryHit(
-                    content=str(content), score=item.get("score"), metadata={"uri": uri}
+                    content=content,
+                    score=item.get("score"),
+                    session_ids=[source[0]] if source else [],
+                    turn_ids=[source[1]] if source else [],
+                    metadata={"uri": uri},
                 )
             )
+            if len(hits) == k:
+                break
+        logger.info(
+            "OpenViking search returned {} usable hits ({} source turns)",
+            len(hits),
+            sum(bool(hit.turn_ids) for hit in hits),
+        )
         return hits
 
     def teardown(self) -> None:
