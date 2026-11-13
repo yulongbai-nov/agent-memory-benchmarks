@@ -6,7 +6,7 @@ on:
     paths:
       - .github/workflows/memory-comparator.yml
       - benchmarks/**
-      - scripts/comparator/run_candidate.py
+      - scripts/comparator/**
   workflow_dispatch:
 
 permissions:
@@ -22,7 +22,7 @@ jobs:
       fail-fast: false
       max-parallel: 4
       matrix:
-        system: [naive, opensquilla, openviking, cognee, everos, fraise, graphiti, hindsight, langmem, mem0, memos]
+        system: [naive, agent-memory-lab, opensquilla, openviking, cognee, everos, fraise, graphiti, hindsight, langmem, mem0, memos]
     env:
       SYSTEM: ${{ matrix.system }}
       OPENAI_API_KEY: ${{ secrets.TEXT_EMBEDDING_3_SMALL_OPENAI_KEY }}
@@ -44,6 +44,26 @@ jobs:
           esac
           uv pip install --no-config --python .venv/bin/python openai==3.49.0
           .venv/bin/amb datasets pull locomo
+      - uses: actions/checkout@v4
+        if: matrix.system == 'agent-memory-lab'
+        with:
+          repository: yulongbai-nov/agent-memory-lab
+          ref: 19e8d3ac8856a97ced59808368e20fd1fb2a9163
+          path: lab-source
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        if: matrix.system == 'agent-memory-lab'
+        with:
+          node-version: '24.22.1'
+      - name: Build pinned Agent Memory Lab
+        if: matrix.system == 'agent-memory-lab'
+        env:
+          OPENAI_API_KEY: ''
+        run: |
+          npm --prefix lab-source ci --ignore-scripts
+          npm --prefix lab-source run build
+          uv pip install --no-config --python .venv/bin/python --no-deps ./scripts/comparator/agent_memory_lab
+          printf 'AGENT_MEMORY_LAB_ROOT=%s/lab-source\n' "$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
       - name: Install isolated OpenSquilla runtime
         if: matrix.system == 'opensquilla'
         run: |
@@ -90,7 +110,7 @@ jobs:
       - name: Measure candidate on matched questions
         run: python scripts/comparator/run_candidate.py "$SYSTEM"
       - name: Show service diagnostics
-        if: failure() && !contains(fromJSON('["naive","opensquilla","openviking"]'), matrix.system)
+        if: failure() && !contains(fromJSON('["naive","opensquilla","openviking","agent-memory-lab"]'), matrix.system)
         run: docker compose -f "benchmarks/$SYSTEM/docker-compose.yaml" logs --tail 40
       - name: Save candidate data
         if: always()
@@ -107,6 +127,6 @@ jobs:
         run: |
           case "$SYSTEM" in
             openviking) docker rm -f amb-openviking || true ;;
-            naive|opensquilla) ;;
+            naive|opensquilla|agent-memory-lab) ;;
             *) docker compose -f "benchmarks/$SYSTEM/docker-compose.yaml" down -v ;;
           esac

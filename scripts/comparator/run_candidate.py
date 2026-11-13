@@ -32,6 +32,7 @@ from pathlib import Path
 
 SYSTEMS = (
     "naive",
+    "agent-memory-lab",
     "opensquilla",
     "openviking",
     "cognee",
@@ -75,11 +76,11 @@ def command_for(system: str) -> list[str]:
     ]
     if system == "openviking":
         args += ["--param", "index_transcripts=true"]
-    if system not in {"naive", "opensquilla"}:
+    if system not in {"naive", "opensquilla", "agent-memory-lab"}:
         args += ["--llm", MODEL]
-    if system != "naive":
+    if system not in {"naive", "agent-memory-lab"}:
         args += ["--embedding", EMBEDDING]
-    if system in {"naive", "opensquilla", "openviking"}:
+    if system in {"naive", "opensquilla", "openviking", "agent-memory-lab"}:
         return [".venv/bin/amb", *args]
     return [
         "docker",
@@ -118,7 +119,7 @@ def process_rss_kib(pid: int) -> int:
 
 def docker_memory_kib(system: str) -> int:
     """Sum Docker's working-set estimate for the active candidate's containers."""
-    if system in {"naive", "opensquilla"}:
+    if system in {"naive", "opensquilla", "agent-memory-lab"}:
         return 0
     filter_arg = (
         "name=^/amb-openviking$"
