@@ -49,17 +49,18 @@ end-to-end path before expanding the benchmark.
   is implied by D1:14 and the session date. This run measures native
   extraction plus source retrieval on one small sample. The option is off by
   default for extraction-only runs.
-- [ ] Extend recorded CPU, core count and memory capacity with measured
-  complete-stack resource use and report elapsed times transparently.
-- [ ] Display comparison results with clear quality, speed, cost, resource and
-  completion status.
+- [x] Record actual runner hardware, wall time and sampled stack memory.
+  The matched run uses four-vCPU public runners. CPU models varied and timings
+  are reported as observed.
+- [x] Complete the matched LoCoMo smoke for all ten frameworks and the BM25
+  control. [Run 43340331343](https://github.com/yulongbai-nov/agent-memory-benchmarks/actions/runs/43340331343)
+  completed all 11 jobs with the same three questions.
+- [x] Publish the metrics, evidence, and analysis on the
+  [independent leaderboard](https://yulongbai-nov.github.io/agent-memory-leaderboard/).
+  The dashboard and the AML Textual adapters are maintained in the
+  [Agent Memory Leaderboard fork](https://github.com/yulongbai-nov/agent-memory-leaderboard/tree/feat/textual-memory-adapters).
 
 ## Later
-
-- [ ] Run the matched memory comparator for BM25, OpenViking, OpenSquilla,
-  Cognee, EverOS, Fraise, Graphiti, Hindsight, LangMem, Mem0 and MemOS.
-  OpenSquilla v0.5.8 uses its native transcript index and retrieval from a
-  separate Python environment.
 
 - [ ] Evaluate integration of https://github.com/yulongbai-nov/agent-memory-lab
   as a benchmark participant. Its API and actual scope need inspection first.
