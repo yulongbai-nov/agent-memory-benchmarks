@@ -5,8 +5,6 @@ on:
     branches: [feat/openviking-benchmark]
     paths:
       - benchmarks/**
-      - scripts/comparator/run_candidate.py
-      - scripts/comparator/locomo_refined*
       - scripts/comparator/agent_memory_lab/**
   workflow_dispatch:
     inputs:

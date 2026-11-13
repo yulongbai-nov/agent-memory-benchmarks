@@ -134,6 +134,7 @@ def main() -> None:
     parser.add_argument("system")
     parser.add_argument("--model", required=True)
     parser.add_argument("--embedding", required=True)
+    parser.add_argument("--sample")
     args = parser.parse_args()
     params = {}
     if args.system not in {"naive", "agent-memory-lab"}:
@@ -145,9 +146,12 @@ def main() -> None:
     benchmark = get_benchmark(args.system).benchmark_class()(params=params)
     root = Path("comparator-runs")
     config = RunConfig(dataset=DATASET, model=args.model, k=10, workers=1, out=root)
-    report = RunReport(
-        Runner(benchmark, config, load_samples(root / "locomo-input")).run()
-    )
+    samples = load_samples(root / "locomo-input")
+    if args.sample:
+        samples = [sample for sample in samples if sample.sample_id == args.sample]
+        if not samples:
+            parser.error(f"Unknown sample {args.sample}")
+    report = RunReport(Runner(benchmark, config, samples).run())
     if args.model != "test":
         report.judge(args.model)
     report.save(root)

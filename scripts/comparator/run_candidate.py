@@ -48,7 +48,9 @@ MODEL = "openai:gpt-6-luna"
 EMBEDDING = "openai:text-embedding-3-small"
 
 
-def command_for(system: str, suite: str = "locomo-refined") -> list[str]:
+def command_for(
+    system: str, suite: str = "locomo-refined", sample: str | None = None
+) -> list[str]:
     """Build the shared LoCoMo invocation with the adapter's native entry point."""
     args = [
         "run",
@@ -91,6 +93,8 @@ def command_for(system: str, suite: str = "locomo-refined") -> list[str]:
             "--embedding",
             EMBEDDING,
         ]
+    if sample:
+        invocation += ["--sample", sample]
     if system in {"naive", "opensquilla", "openviking", "agent-memory-lab"}:
         return [f".venv/bin/{invocation[0]}", *invocation[1:]]
     return [
@@ -169,7 +173,10 @@ def main() -> None:
     parser.add_argument(
         "--suite", choices=["locomo", "locomo-refined"], default="locomo-refined"
     )
+    parser.add_argument("--sample")
     args = parser.parse_args()
+    if args.sample and args.suite != "locomo-refined":
+        parser.error("--sample requires LoCoMo-Refined")
     system, suite = args.system, args.suite
     root = Path("comparator-runs")
     root.mkdir(exist_ok=True)
@@ -185,7 +192,7 @@ def main() -> None:
     start = time.monotonic()
     samples = []
     dropped = 0
-    with subprocess.Popen(command_for(system, suite)) as process:
+    with subprocess.Popen(command_for(system, suite, args.sample)) as process:
         while process.poll() is None:
             try:
                 samples.append(process_rss_kib(process.pid) + docker_memory_kib(system))
@@ -212,8 +219,21 @@ def main() -> None:
         json.loads(line)
         for line in (matches[0].parent / "results.jsonl").read_text().splitlines()
     ]
+    expected = 30 if suite == "locomo-refined" else 3
+    if args.sample:
+        expected = {
+            "conv-26": 2,
+            "conv-41": 3,
+            "conv-42": 6,
+            "conv-43": 4,
+            "conv-44": 3,
+            "conv-47": 5,
+            "conv-48": 2,
+            "conv-49": 3,
+            "conv-50": 2,
+        }[args.sample]
     if (
-        len(rows) != (30 if suite == "locomo-refined" else 3)
+        len(rows) != expected
         or summary.get("errors")
         or any(row.get("judge_correct") is None for row in rows)
     ):
