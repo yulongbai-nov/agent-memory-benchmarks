@@ -1,0 +1,109 @@
+name: Memory framework comparator
+
+on:
+  push:
+    branches: [feat/openviking-benchmark]
+    paths:
+      - .github/workflows/memory-comparator.yml
+      - benchmarks/opensquilla/**
+      - scripts/comparator/run_candidate.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  candidate:
+    name: ${{ matrix.system }}
+    runs-on: ubuntu-24.04
+    environment: Develop
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        system: [naive, opensquilla, openviking, cognee, everos, fraise, graphiti, hindsight, langmem, mem0, memos]
+    env:
+      SYSTEM: ${{ matrix.system }}
+      OPENAI_API_KEY: ${{ secrets.TEXT_EMBEDDING_3_SMALL_OPENAI_KEY }}
+      OPENVIKING_BENCHMARK_KEY: amb-local-only
+      OPENVIKING_BASE_URL: http://127.0.0.1:1933
+      COMPOSE_PROJECT_NAME: amb-${{ matrix.system }}
+      HINDSIGHT_API_LLM_PROVIDER: openai
+      HINDSIGHT_API_LLM_MODEL: gpt-6-luna
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: '0.12.0'
+      - name: Install benchmark harness
+        run: |
+          case "$SYSTEM" in
+            opensquilla|openviking) uv sync --locked --package "$SYSTEM-benchmark" ;;
+            *) uv sync --locked ;;
+          esac
+          uv pip install --no-config --python .venv/bin/python openai==3.49.0
+          .venv/bin/amb datasets pull locomo
+      - name: Install isolated OpenSquilla runtime
+        if: matrix.system == 'opensquilla'
+        run: |
+          uv venv --no-project --python 3.13 "$RUNNER_TEMP/opensquilla"
+          worker_python="$RUNNER_TEMP/opensquilla/bin/python"
+          uv pip install --no-config --python "$worker_python" \
+            'https://github.com/TokenRhythm/opensquilla/releases/download/v0.5.8/opensquilla-0.5.8-py3-none-any.whl#sha256=db292f4b604422fb6828acb4d9bb976fb69fcfcff4eaf77109aca0a4aed7151a'
+          uv pip freeze --python "$worker_python" > "$RUNNER_TEMP/opensquilla-packages.txt"
+          printf 'OPENSQUILLA_PYTHON=%s\n' "$worker_python" >> "$GITHUB_ENV"
+      - name: Start pinned OpenViking server
+        if: matrix.system == 'openviking'
+        run: |
+          umask 077
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+
+          key = os.environ["OPENAI_API_KEY"]
+          config = {
+              "server": {"host": "0.0.0.0", "port": 1933, "auth_mode": "trusted",
+                         "root_api_key": os.environ["OPENVIKING_BENCHMARK_KEY"]},
+              "storage": {"workspace": "/tmp/openviking-benchmark"},
+              "embedding": {"dense": {"provider": "openai", "model": "text-embedding-3-small",
+                                       "api_key": key, "dimension": 1536, "input": "text"}},
+              "vlm": {"provider": "openai", "model": "gpt-6-luna", "api_key": key,
+                      "reasoning_effort": "none", "max_tokens": 2048},
+          }
+          Path(os.environ["RUNNER_TEMP"], "openviking-conf.json").write_text(json.dumps(config))
+          PY
+          docker run -d --name amb-openviking \
+            -p 127.0.0.1:1933:1933 \
+            -v "$RUNNER_TEMP/openviking-conf.json:/app/.openviking/ov.conf:ro" \
+            ghcr.io/volcengine/openviking@sha256:cd1a62b698c5dd4c2685acf5e3f8b1b543a4c32d25f81dec0ceff23e7a96de9d --without-bot
+          for ((attempt = 0; attempt < 90; attempt++)); do
+            if curl -fsS -H "X-API-Key: $OPENVIKING_BENCHMARK_KEY" http://127.0.0.1:1933/health >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 2
+          done
+          exit 1
+      - name: Prepare candidate containers
+        if: "!contains(fromJSON('[\"naive\",\"opensquilla\",\"openviking\"]'), matrix.system)"
+        run: docker compose -f "benchmarks/$SYSTEM/docker-compose.yaml" build
+      - name: Measure candidate on matched questions
+        run: python scripts/comparator/run_candidate.py "$SYSTEM"
+      - name: Save candidate data
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: comparator-${{ matrix.system }}
+          path: |
+            comparator-runs/
+            ${{ runner.temp }}/opensquilla-packages.txt
+          if-no-files-found: ignore
+          retention-days: 90
+      - name: Remove isolated services
+        if: always()
+        run: |
+          case "$SYSTEM" in
+            openviking) docker rm -f amb-openviking || true ;;
+            naive|opensquilla) ;;
+            *) docker compose -f "benchmarks/$SYSTEM/docker-compose.yaml" down -v ;;
+          esac

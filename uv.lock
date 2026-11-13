@@ -25,6 +25,7 @@ members = [
     "langmem-benchmark",
     "mem0",
     "memos-benchmark",
+    "opensquilla-benchmark",
     "openviking-benchmark",
 ]
 overrides = [
@@ -3949,6 +3950,17 @@ sdist = { url = "https://files.pythonhosted.org/packages/3d/f9/88d94a75de065ea32
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c0/da/977ded879c29cbd04de313843e76868e6e13408a94ed6b987245dc7c8506/openpyxl-3.1.5-py2.py3-none-any.whl", hash = "sha256:5282c12b107bffeef825f4617dc029afaf41d0ea60823bbb665ef3079dc79de2", size = 250910, upload-time = "2024-06-28T14:03:41.161Z" },
 ]
+
+[[package]]
+name = "opensquilla-benchmark"
+version = "0.1.0"
+source = { editable = "benchmarks/opensquilla" }
+dependencies = [
+    { name = "amb" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "amb", editable = "." }]
 
 [[package]]
 name = "opentelemetry-api"

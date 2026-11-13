@@ -56,6 +56,11 @@ end-to-end path before expanding the benchmark.
 
 ## Later
 
+- [ ] Run the matched memory comparator for BM25, OpenViking, OpenSquilla,
+  Cognee, EverOS, Fraise, Graphiti, Hindsight, LangMem, Mem0 and MemOS.
+  OpenSquilla v0.5.8 uses its native transcript index and retrieval from a
+  separate Python environment.
+
 - [ ] Evaluate integration of https://github.com/yulongbai-nov/agent-memory-lab
   as a benchmark participant. Its API and actual scope need inspection first.
 - [ ] Add further datasets or candidates only after the first end-to-end path
