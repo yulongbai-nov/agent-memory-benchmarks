@@ -22,7 +22,7 @@ jobs:
     name: ${{ matrix.system }}
     runs-on: ubuntu-24.04
     environment: Develop
-    timeout-minutes: 20
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       max-parallel: 4
@@ -48,7 +48,6 @@ jobs:
             *) uv sync --locked ;;
           esac
           uv pip install --no-config --python .venv/bin/python openai==3.49.0
-          .venv/bin/amb datasets pull locomo
       - uses: actions/checkout@v4
         if: matrix.system == 'agent-memory-lab'
         with:
@@ -124,6 +123,7 @@ jobs:
           name: comparator-${{ matrix.system }}
           path: |
             comparator-runs/
+            !comparator-runs/locomo-input/**
             ${{ runner.temp }}/opensquilla-packages.txt
           if-no-files-found: ignore
           retention-days: 90

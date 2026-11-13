@@ -48,7 +48,7 @@ MODEL = "openai:gpt-6-luna"
 EMBEDDING = "openai:text-embedding-3-small"
 
 
-def command_for(system: str) -> list[str]:
+def command_for(system: str, suite: str = "locomo-refined") -> list[str]:
     """Build the shared LoCoMo invocation with the adapter's native entry point."""
     args = [
         "run",
@@ -80,8 +80,19 @@ def command_for(system: str) -> list[str]:
         args += ["--llm", MODEL]
     if system not in {"naive", "agent-memory-lab"}:
         args += ["--embedding", EMBEDDING]
+    invocation = ["amb", *args]
+    if suite == "locomo-refined":
+        invocation = [
+            "python",
+            "scripts/comparator/locomo_refined.py",
+            system,
+            "--model",
+            MODEL,
+            "--embedding",
+            EMBEDDING,
+        ]
     if system in {"naive", "opensquilla", "openviking", "agent-memory-lab"}:
-        return [".venv/bin/amb", *args]
+        return [f".venv/bin/{invocation[0]}", *invocation[1:]]
     return [
         "docker",
         "compose",
@@ -97,9 +108,9 @@ def command_for(system: str) -> list[str]:
         "benchmark",
         "-ec",
         "uv pip install --no-config --python /amb/.venv/bin/python openai==3.49.0; "
-        'exec /amb/.venv/bin/amb "$@"',
+        'executable="$1"; shift; exec "/amb/.venv/bin/$executable" "$@"',
         "amb",
-        *args,
+        *invocation,
     ]
 
 
@@ -151,11 +162,15 @@ def main() -> None:
     """Write run-level metrics even when the candidate exits with errors.
 
     Raises:
-        SystemExit: If the candidate did not complete all three judged questions.
+        SystemExit: If the candidate did not complete all judged questions.
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("system", choices=SYSTEMS)
-    system = parser.parse_args().system
+    parser.add_argument(
+        "--suite", choices=["locomo", "locomo-refined"], default="locomo-refined"
+    )
+    args = parser.parse_args()
+    system, suite = args.system, args.suite
     root = Path("comparator-runs")
     root.mkdir(exist_ok=True)
     cpu = subprocess.check_output(["lscpu", "--json"], text=True)
@@ -170,7 +185,7 @@ def main() -> None:
     start = time.monotonic()
     samples = []
     dropped = 0
-    with subprocess.Popen(command_for(system)) as process:
+    with subprocess.Popen(command_for(system, suite)) as process:
         while process.poll() is None:
             try:
                 samples.append(process_rss_kib(process.pid) + docker_memory_kib(system))
@@ -189,7 +204,7 @@ def main() -> None:
         "exit_code": process.returncode,
     }
     (root / "runtime.json").write_text(json.dumps(metrics, indent=2))
-    matches = list(root.glob(f"locomo/{system}/*/summary.json"))
+    matches = list(root.glob(f"{suite}/{system}/*/summary.json"))
     if process.returncode or len(matches) != 1:
         raise SystemExit(f"{system} did not produce one complete benchmark run")
     summary = json.loads(matches[0].read_text())
@@ -198,11 +213,17 @@ def main() -> None:
         for line in (matches[0].parent / "results.jsonl").read_text().splitlines()
     ]
     if (
-        len(rows) != 3
+        len(rows) != (30 if suite == "locomo-refined" else 3)
         or summary.get("errors")
         or any(row.get("judge_correct") is None for row in rows)
     ):
         raise SystemExit(f"{system} returned errors or unjudged questions")
+    print(
+        "COMPARATOR_SUMMARY "
+        + json.dumps({"summary": summary, "runtime": metrics}, separators=(",", ":"))
+    )
+    for row in rows:
+        print("COMPARATOR_QUESTION " + json.dumps(row, separators=(",", ":")))
     print(
         "COMPARATOR_RESULT "
         + json.dumps(
