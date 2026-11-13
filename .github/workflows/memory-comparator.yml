@@ -5,7 +5,7 @@ on:
     branches: [feat/openviking-benchmark]
     paths:
       - .github/workflows/memory-comparator.yml
-      - benchmarks/opensquilla/**
+      - benchmarks/**
       - scripts/comparator/run_candidate.py
   workflow_dispatch:
 
@@ -89,6 +89,9 @@ jobs:
         run: docker compose -f "benchmarks/$SYSTEM/docker-compose.yaml" build
       - name: Measure candidate on matched questions
         run: python scripts/comparator/run_candidate.py "$SYSTEM"
+      - name: Show service diagnostics
+        if: failure() && !contains(fromJSON('["naive","opensquilla","openviking"]'), matrix.system)
+        run: docker compose -f "benchmarks/$SYSTEM/docker-compose.yaml" logs --tail 40
       - name: Save candidate data
         if: always()
         uses: actions/upload-artifact@v4

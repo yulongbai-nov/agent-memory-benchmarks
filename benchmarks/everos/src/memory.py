@@ -93,7 +93,7 @@ DEFAULT_ROOT = ".everos"
 # `LLMConfig.temperature`, so nothing internal is patched.
 REASONING_TEMPERATURE = 1.0
 # model families that reject any temperature but the default
-_REASONING_MODELS = ("gpt-5", "o1", "o3", "o4")
+_REASONING_MODELS = ("gpt-5", "gpt-6", "o1", "o3", "o4")
 # the app every conversation of this benchmark is filed under
 APP_ID = "amb"
 # app_id / project_id / sender_id become directory segments, so EverOS
