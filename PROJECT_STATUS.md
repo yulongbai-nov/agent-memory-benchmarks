@@ -62,8 +62,11 @@ end-to-end path before expanding the benchmark.
 
 ## Later
 
-- [ ] Evaluate integration of https://github.com/yulongbai-nov/agent-memory-lab
-  as a benchmark participant. Its API and actual scope need inspection first.
+- [x] Add Agent Memory Lab to the matched LoCoMo comparison. Its native
+  SQLite archive imported all 40 turns and the adapter scored 1/3 using
+  the original three question IDs and evaluation models. The memory path
+  uses scoped keyword lookup with a benchmark ranker and makes no model
+  calls. [Scored job](https://github.com/yulongbai-nov/agent-memory-benchmarks/actions/runs/43344052919/job/131618995407)
 - [ ] Add further datasets or candidates only after the first end-to-end path
   works; document-based candidates are out of the current milestone.
 
