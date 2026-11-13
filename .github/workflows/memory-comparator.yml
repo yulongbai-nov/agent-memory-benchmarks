@@ -22,7 +22,7 @@ jobs:
       fail-fast: false
       max-parallel: 4
       matrix:
-        system: [naive, agent-memory-lab, opensquilla, openviking, cognee, everos, fraise, graphiti, hindsight, langmem, mem0, memos]
+        system: [agent-memory-lab]
     env:
       SYSTEM: ${{ matrix.system }}
       OPENAI_API_KEY: ${{ secrets.TEXT_EMBEDDING_3_SMALL_OPENAI_KEY }}
@@ -60,7 +60,7 @@ jobs:
         env:
           OPENAI_API_KEY: ''
         run: |
-          npm --prefix lab-source ci --ignore-scripts
+          npm --prefix lab-source ci --ignore-scripts --no-audit --no-fund
           npm --prefix lab-source run build
           uv pip install --no-config --python .venv/bin/python --no-deps ./scripts/comparator/agent_memory_lab
           printf 'AGENT_MEMORY_LAB_ROOT=%s/lab-source\n' "$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
@@ -105,7 +105,7 @@ jobs:
           done
           exit 1
       - name: Prepare candidate containers
-        if: "!contains(fromJSON('[\"naive\",\"opensquilla\",\"openviking\"]'), matrix.system)"
+        if: ${{ !contains(fromJSON('["naive","opensquilla","openviking","agent-memory-lab"]'), matrix.system) }}
         run: docker compose -f "benchmarks/$SYSTEM/docker-compose.yaml" build
       - name: Measure candidate on matched questions
         run: python scripts/comparator/run_candidate.py "$SYSTEM"
