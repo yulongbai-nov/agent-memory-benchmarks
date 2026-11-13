@@ -84,7 +84,8 @@ benchmark comparison.
   experience pool. Evaluate same-repository retrieval with dates strictly
   earlier than the target. The 118 scorable rows have a labelled issue
   under that protocol. [Coding run](https://github.com/yulongbai-nov/agent-memory-benchmarks/actions/runs/43349212868)
-- [ ] Finish the twelve-candidate rerun on the same 30 LoCoMo-Refined
-  questions and nine full text histories.
+- [ ] Complete the active four-way comparison on the 30 LoCoMo-Refined
+  questions and nine full text histories. The active candidates are BM25,
+  Agent Memory Lab, OpenViking and EverOS.
   [Textual run](https://github.com/yulongbai-nov/agent-memory-benchmarks/actions/runs/43349136480)
 - [ ] Evaluate patch resolution with a shared coding agent and verifier.
