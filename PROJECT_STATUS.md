@@ -30,17 +30,25 @@ end-to-end path before expanding the benchmark.
 - [x] Run a three-question comparison against BM25 with the same question IDs
   and runner (43242463379). OpenViking scored 0/3 with no recorded hits; BM25
   scored 2/3. This sample is too small to rank systems.
-- [ ] Improve and evaluate OpenViking's LoCoMo ingestion. In run 43243874437,
+- [x] Improve and evaluate OpenViking's LoCoMo ingestion. In run 43243874437,
   individual user messages produced zero memory writes for all three sessions.
   Run 43244733926 submitted one dated, speaker-labelled transcript per source
   session and produced one memory edit and search hits, but still scored 0/3;
   BM25 scored 1/3. The repeat, 43245329359, produced two edits and hits but
   still scored 0/3, versus BM25 2/3. This tiny sample is not a ranking. Direct
   synthetic recall passed in several runs and failed once.
-  The follow-up smoke uses `index_transcripts=true`. OpenViking keeps its
-  session extraction and also indexes the original dated turns under private
-  resources. Search ranks both sources and returns the original turn's
-  provenance when available.
+  In [run 43337143974](https://github.com/yulongbai-nov/agent-memory-benchmarks/actions/runs/43337143974),
+  `index_transcripts=true` preserved the 40 dated source turns in private
+  OpenViking resources alongside session extraction. Extraction still wrote
+  zero memories across three LoCoMo sessions. The server returned ten source
+  turns per question, including the annotated evidence session for all three.
+  OpenViking improved from 0/3 to 1/3 and matched BM25 on the same question IDs
+  with zero execution errors. Both got the support-group date right, answered
+  "Last year" where the judge expected 2022, and gave a partial education
+  answer. LoCoMo labels turn D1:12 for the sunrise question, while the year
+  is implied by D1:14 and the session date. This run measures native
+  extraction plus source retrieval on one small sample. The option is off by
+  default for extraction-only runs.
 - [ ] Extend recorded CPU, core count and memory capacity with measured
   complete-stack resource use and report elapsed times transparently.
 - [ ] Display comparison results with clear quality, speed, cost, resource and
