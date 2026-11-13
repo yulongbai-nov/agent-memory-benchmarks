@@ -77,3 +77,14 @@ The configured key is used for embeddings and GPT-6 Luna for the initial
 smoke test. Do not copy secrets into the repo or print them. API use can incur
 charges even when the runner is free. A smoke test is not a representative
 benchmark comparison.
+
+## Expanded public benchmark
+
+- [x] Pin all 362 SWE-ContextBench related rows and the 1,007-record prior
+  experience pool. Evaluate same-repository retrieval with dates strictly
+  earlier than the target. The 118 scorable rows have a labelled issue
+  under that protocol. [Coding run](https://github.com/yulongbai-nov/agent-memory-benchmarks/actions/runs/43349212868)
+- [ ] Finish the twelve-candidate rerun on the same 30 LoCoMo-Refined
+  questions and nine full text histories.
+  [Textual run](https://github.com/yulongbai-nov/agent-memory-benchmarks/actions/runs/43349136480)
+- [ ] Evaluate patch resolution with a shared coding agent and verifier.
